@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Submit modal scrollbar */
+.submit-modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.submit-modal-scroll::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.submit-modal-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.submit-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Fullscreen styles */
+.fullscreen-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+  z-index: 9999;
+}
+
+/* Hide scrollbars but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Question palette styles */
+.question-number {
+  @apply w-8 h-8 flex items-center justify-center text-sm font-medium border-2 cursor-pointer transition-colors rounded;
+}
+
+.question-not-visited {
+  @apply bg-gray-100 border-gray-300 text-gray-700;
+}
+
+.question-not-answered {
+  @apply bg-red-100 border-red-300 text-red-700;
+}
+
+.question-answered {
+  @apply bg-green-100 border-green-500 text-green-700;
+}
+
+.question-marked-review {
+  @apply bg-yellow-100 border-yellow-500 text-yellow-700;
+}
+
+.question-answered-and-marked {
+  @apply border-2 border-green-500 text-black font-bold;
+  background: linear-gradient(135deg, #dcfce7 50%, #fef3c7 50%);
+}
+
+.question-answered-and-marked.question-current {
+  @apply bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500;
+  background: linear-gradient(135deg, #dbeafe 50%, #fef3c7 50%) !important;
+}
+
+.question-current {
+  @apply bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500;
+}
+
+/* Current question overrides for different statuses */
+.question-not-visited.question-current {
+  @apply bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500;
+}
+
+.question-not-answered.question-current {
+  @apply bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500;
+}
+
+.question-answered.question-current {
+  @apply bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500;
+}
+
+.question-marked-review.question-current {
+  @apply bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-500;
+}
+
+/* Button styles */
+.btn-previous {
+  @apply bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-medium disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-next {
+  @apply bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium;
+}
+
+.btn-clear {
+  @apply bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded font-medium;
+}
+
+.btn-mark-review {
+  @apply bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium;
+}
+
+/* Virtual keypad */
+.virtual-keypad {
+  @apply bg-gray-50 p-4 rounded-lg border-2 border-gray-300 shadow-lg;
+  max-width: 280px;
+}
+
+.keypad-container {
+  @apply space-y-1;
+}
+
+.keypad-row {
+  @apply flex justify-center gap-1;
+}
+
+.keypad-key {
+  @apply w-16 h-12 bg-white hover:bg-gray-100 border-2 border-gray-400 rounded-md flex items-center justify-center font-bold text-lg cursor-pointer transition-all duration-150 shadow-sm;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.keypad-key:hover {
+  @apply border-gray-500;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.keypad-key:active {
+  @apply bg-gray-200;
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.keypad-special {
+  @apply bg-blue-50 hover:bg-blue-100 border-blue-400 text-blue-700;
+}
+
+.keypad-backspace {
+  @apply bg-orange-50 hover:bg-orange-100 border-orange-400 text-orange-700;
+}
+
+.keypad-clear {
+  @apply bg-red-50 hover:bg-red-100 border-red-400 text-red-700 w-full;
+}
