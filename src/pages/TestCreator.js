@@ -279,6 +279,8 @@ const TestCreator = () => {
           message: 'Draft saved successfully!',
           type: 'success'
         });
+        // Don't reset form when updating existing draft - keep working on it
+        fetchTests(); // Just refresh the tests list
       } else {
         // Creating new draft
         await testAPI.saveDraft(formData, onUploadProgress);
@@ -288,11 +290,10 @@ const TestCreator = () => {
           message: 'Draft saved successfully!',
           type: 'success'
         });
+        // Reset form only when creating new draft
+        resetForm();
+        fetchTests();
       }
-      
-      // Reset form
-      resetForm();
-      fetchTests();
     } catch (error) {
       console.error('Error saving draft:', error);
       setModal({
