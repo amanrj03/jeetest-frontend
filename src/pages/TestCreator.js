@@ -64,7 +64,11 @@ const TestCreator = () => {
       if (event.ctrlKey && event.key === 'd') {
         event.preventDefault(); // Prevent browser's default bookmark action
         if (activeTab === 'create') {
-          saveDraft();
+          // Simulate clicking the Save Draft button instead of calling saveDraft directly
+          const saveDraftButton = document.querySelector('[data-save-draft-button]');
+          if (saveDraftButton && !saveDraftButton.disabled) {
+            saveDraftButton.click();
+          }
         }
       }
     };
@@ -1049,6 +1053,7 @@ const TestCreator = () => {
                   <button
                     onClick={saveDraft}
                     disabled={saveDraftLoading || createTestLoading}
+                    data-save-draft-button
                     className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-semibold relative group"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1078,6 +1083,7 @@ const TestCreator = () => {
                   <button
                     onClick={saveDraft}
                     disabled={saveDraftLoading || createTestLoading}
+                    data-save-draft-button
                     className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-semibold relative group"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
