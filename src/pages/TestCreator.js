@@ -272,15 +272,41 @@ const TestCreator = () => {
 
       if (editingTest) {
         // When updating an existing test (draft or continuing), always keep as draft
-        await testAPI.updateTest(editingTest.id, formData, onUploadProgress);
+        const response = await testAPI.updateTest(editingTest.id, formData, onUploadProgress);
         setModal({
           show: true,
           title: 'Success',
           message: 'Draft saved successfully!',
           type: 'success'
         });
-        // Don't reset form when updating existing draft - keep working on it
-        fetchTests(); // Just refresh the tests list
+        // Don't reset form when updating existing draft - but refresh the data
+        fetchTests(); // Refresh the tests list
+        
+        // Refresh the current form with updated data from the response
+        if (response.data) {
+          const updatedTest = response.data;
+          setTestName(updatedTest.name);
+          setDuration({ 
+            hours: Math.floor(updatedTest.duration / 60), 
+            minutes: updatedTest.duration % 60 
+          });
+          
+          // Convert updated test sections to form format
+          const refreshedSections = updatedTest.sections.map(section => ({
+            name: section.name,
+            questionType: section.questionType,
+            isExpanded: false,
+            questions: section.questions.map((question, idx) => ({
+              id: question.id || `q-${Date.now()}-${idx}`,
+              questionImage: question.questionImage,
+              solutionImage: question.solutionImage,
+              correctOption: question.correctOption,
+              correctInteger: question.correctInteger?.toString() || ''
+            }))
+          }));
+          
+          setSections(refreshedSections);
+        }
       } else {
         // Creating new draft
         await testAPI.saveDraft(formData, onUploadProgress);
