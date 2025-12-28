@@ -8,11 +8,12 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
   const [modal, setModal] = useState({ show: false, title: '', message: '' });
   const fileInputRef = useRef(null);
   const pasteAreaRef = useRef(null);
+  const componentId = useRef(`smart-image-${Date.now()}-${Math.random()}`).current;
 
   useEffect(() => {
     const handleGlobalPaste = (e) => {
-      // Only handle paste if this component's area is focused or hovered
-      if (pasteAreaRef.current && (document.activeElement === pasteAreaRef.current || pasteAreaRef.current.contains(document.activeElement))) {
+      // Only handle paste if this specific component is the active one
+      if (window.activeSmartImageInput === componentId) {
         handlePaste(e);
       }
     };
@@ -20,8 +21,12 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
     document.addEventListener('paste', handleGlobalPaste);
     return () => {
       document.removeEventListener('paste', handleGlobalPaste);
+      // Clean up if this component was the active one
+      if (window.activeSmartImageInput === componentId) {
+        window.activeSmartImageInput = null;
+      }
     };
-  }, []);
+  }, [componentId]);
 
   const handleImageFile = (file) => {
     if (file && file.type.startsWith('image/')) {
@@ -52,6 +57,8 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
 
   const handlePaste = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to other components
+    
     const items = e.clipboardData?.items;
     
     if (items) {
@@ -124,6 +131,7 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
       {!imagePreview && (
         <div
           ref={pasteAreaRef}
+          id={componentId}
           className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
             dragOver 
               ? 'border-blue-500 bg-blue-50' 
@@ -137,6 +145,16 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
           onPaste={handlePaste}
           tabIndex={0}
           style={{ outline: 'none' }}
+          onFocus={() => {
+            // Mark this component as the active one for paste handling
+            window.activeSmartImageInput = componentId;
+          }}
+          onBlur={() => {
+            // Clear the active component when focus is lost
+            if (window.activeSmartImageInput === componentId) {
+              window.activeSmartImageInput = null;
+            }
+          }}
         >
         <div className="space-y-2">
           <div className="text-gray-600">
