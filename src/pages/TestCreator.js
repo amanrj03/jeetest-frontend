@@ -606,17 +606,27 @@ const TestCreator = () => {
   const deleteTest = async (testId) => {
     setConfirmModal({
       show: true,
-      title: 'Delete Test',
-      message: 'Are you sure you want to delete this test? This action cannot be undone.',
+      title: 'Permanently Delete Test',
+      message: 'Are you sure you want to permanently delete this test? This will remove:\n\n• All test questions and images\n• All student attempts and answers\n• All related data from database\n\nThis action cannot be undone!',
       onConfirm: async () => {
         try {
-          await testAPI.deleteTest(testId);
+          const response = await testAPI.deleteTest(testId);
           fetchTests();
           setConfirmModal({ show: false, title: '', message: '', onConfirm: null });
+          
+          // Show detailed success message
+          const deletedData = response.data.deletedData;
+          const detailMessage = `Successfully deleted "${deletedData.testName}" and all related data:\n\n` +
+            `• ${deletedData.sections} sections\n` +
+            `• ${deletedData.questions} questions\n` +
+            `• ${deletedData.studentAttempts} student attempts\n` +
+            `• ${deletedData.studentAnswers} student answers\n` +
+            `• ${deletedData.images.deleted}/${deletedData.images.total} images`;
+          
           setModal({
             show: true,
-            title: 'Success',
-            message: 'Test deleted successfully!',
+            title: 'Complete Deletion Successful',
+            message: detailMessage,
             type: 'success'
           });
         } catch (error) {
@@ -1333,6 +1343,15 @@ const TestCreator = () => {
                         className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                       >
                         Preview
+                      </button>
+                      <button
+                        onClick={() => deleteTest(test.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 flex items-center gap-1"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Remove
                       </button>
                     </div>
                   </div>
