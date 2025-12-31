@@ -83,7 +83,12 @@ export const attemptAPI = {
   getUserAttempts: (candidateName) => api.get(`/attempts/user/${candidateName}`),
   requestResume: (data) => api.post('/attempts/request-resume', data),
   allowResume: (data) => api.post('/attempts/allow-resume', data),
-  getResumeRequests: () => api.get('/attempts/resume-requests')
+  getResumeRequests: () => api.get('/attempts/resume-requests'),
+  
+  // Time tracking methods
+  updateQuestionTime: (attemptId, data) => api.put(`/attempts/${attemptId}/question-time`, data),
+  syncTimeData: (attemptId, data) => api.put(`/attempts/${attemptId}/sync-times`, data),
+  getTimeAnalytics: (attemptId) => api.get(`/attempts/${attemptId}/time-analytics`)
 };
 
 export default api;

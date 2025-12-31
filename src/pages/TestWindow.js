@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { attemptAPI } from '../services/api';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { useTimer } from '../hooks/useTimer';
+import { useTimeTracking } from '../hooks/useTimeTracking';
 import { keepAliveService } from '../services/keepAlive';
 import QuestionPalette from '../components/QuestionPalette';
 import MCQQuestion from '../components/MCQQuestion';
@@ -30,6 +31,15 @@ const TestWindow = () => {
   const candidateName = localStorage.getItem('candidateName');
   const candidateImage = localStorage.getItem('candidateImage');
 
+  // Initialize time tracking
+  const {
+    startQuestionTimer,
+    stopCurrentTimer,
+    syncTimeData
+  } = useTimeTracking(attemptId);
+
+  console.log('🔧 TestWindow initialized with attemptId:', attemptId);
+
   const handleConfirmSubmit = useCallback(async (skipConfirmation = false) => {
     if (submitting) return;
     
@@ -37,6 +47,10 @@ const TestWindow = () => {
     setSubmitting(true);
     
     try {
+      // Stop current timer and sync final time data
+      stopCurrentTimer();
+      await syncTimeData();
+      
       // Clear sync interval
       if (syncIntervalRef.current) {
         clearInterval(syncIntervalRef.current);
@@ -83,7 +97,7 @@ const TestWindow = () => {
       });
       setSubmitting(false);
     }
-  }, [submitting, answers, attemptId, navigate]);
+  }, [submitting, answers, attemptId, navigate, stopCurrentTimer, syncTimeData]);
 
   const handleSubmitTest = useCallback((skipConfirmation = false) => {
     if (submitting) return;
@@ -155,7 +169,6 @@ const TestWindow = () => {
 
   const { 
     enterFullscreen, 
-    warningCount, 
     showWarningModal, 
     handleWarningOk, 
     handleWarningTimeout 
@@ -206,7 +219,7 @@ const TestWindow = () => {
     }, 1000); // Give 1 second to show the modal
   }, [submitting, answers, attemptId, navigate]);
 
-  const { timeLeft, formattedTime, start: startTimer, reset: resetTimer, stop: stopTimer } = useTimer(0, handleTimeUp);
+  const { formattedTime, start: startTimer, reset: resetTimer } = useTimer(0, handleTimeUp);
 
 
 
@@ -284,6 +297,11 @@ const TestWindow = () => {
       // Start timer after a short delay to ensure everything is loaded
       setTimeout(() => {
         startTimer();
+        
+        // Start time tracking for the first question
+        if (firstQuestion) {
+          startQuestionTimer(firstQuestion.id);
+        }
       }, 1000);
       
       // Start auto-sync
@@ -371,20 +389,40 @@ const TestWindow = () => {
   };
 
   const navigateToQuestion = (sectionIndex, questionIndex) => {
-    // Mark current question as visited if not already
+    // Get current and new question IDs
     const currentQ = getCurrentQuestion();
-    if (currentQ && getQuestionStatus(currentQ.id) === 'NOT_VISITED') {
-      updateAnswer(currentQ.id, { status: 'NOT_ANSWERED' });
+    const newQuestionId = attempt.test.sections[sectionIndex]?.questions[questionIndex]?.id;
+    
+    console.log('🧭 Navigating from question:', currentQ?.id, 'to question:', newQuestionId);
+    
+    // Stop timer for current question FIRST
+    if (currentQ) {
+      console.log('⏹️ Stopping timer for current question:', currentQ.id);
+      stopCurrentTimer();
+      
+      // Mark current question as visited if not already
+      if (getQuestionStatus(currentQ.id) === 'NOT_VISITED') {
+        updateAnswer(currentQ.id, { status: 'NOT_ANSWERED' });
+      }
     }
 
+    // Update navigation state
     setCurrentSection(sectionIndex);
     setCurrentQuestion(questionIndex);
     
-    // Mark the new question as visited immediately
-    const newQuestionId = attempt.test.sections[sectionIndex]?.questions[questionIndex]?.id;
-    if (newQuestionId && getQuestionStatus(newQuestionId) === 'NOT_VISITED') {
-      updateAnswer(newQuestionId, { status: 'NOT_ANSWERED' });
-    }
+    // Use setTimeout to ensure state updates are processed before starting new timer
+    setTimeout(() => {
+      // Start timer for new question
+      if (newQuestionId) {
+        console.log('⏱️ Starting timer for new question:', newQuestionId);
+        startQuestionTimer(newQuestionId);
+        
+        // Mark the new question as visited immediately
+        if (getQuestionStatus(newQuestionId) === 'NOT_VISITED') {
+          updateAnswer(newQuestionId, { status: 'NOT_ANSWERED' });
+        }
+      }
+    }, 10); // Small delay to ensure state updates are processed
   };
 
   const handleNext = () => {
@@ -447,7 +485,7 @@ const TestWindow = () => {
       status: 'MARKED_FOR_REVIEW'
     });
     
-    // Navigate to next question without auto-marking current as NOT_ANSWERED
+    // Navigate to next question using proper navigation function
     const allQuestions = getAllQuestions();
     const currentGlobalIndex = attempt.test.sections
       .slice(0, currentSection)
@@ -468,9 +506,8 @@ const TestWindow = () => {
         nextSectionIndex = i + 1;
       }
 
-      // Navigate directly without calling navigateToQuestion to avoid status override
-      setCurrentSection(nextSectionIndex);
-      setCurrentQuestion(nextQuestionIndex);
+      // Use navigateToQuestion to ensure proper timer management
+      navigateToQuestion(nextSectionIndex, nextQuestionIndex);
     }
   };
 
@@ -680,7 +717,6 @@ const TestWindow = () => {
         isOpen={showWarningModal}
         onOk={handleWarningOk}
         onTimeout={handleWarningTimeout}
-        warningCount={warningCount}
         reason="window switching or Alt+Tab"
       />
 

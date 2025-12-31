@@ -1,17 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: 'Arial', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* FORCE OUTFIT FONT ON EVERYTHING */
+* {
+  font-family: 'Outfit', sans-serif !important;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+html {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+body {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+#root {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+/* Override Tailwind defaults */
+.font-sans {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.font-mono {
+  font-family: 'Outfit', monospace !important;
+}
+
+.font-serif {
+  font-family: 'Outfit', serif !important;
+}
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 174 72% 40%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 174 72% 56%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 16 85% 57%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 152 69% 41%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 152 69% 95%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 95%;
+
+    --error: 0 72% 51%;
+    --error-foreground: 0 0% 100%;
+    --error-light: 0 72% 95%;
+
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+    --info-light: 217 91% 95%;
+
+    --purple: 262 83% 58%;
+    --purple-foreground: 0 0% 100%;
+    --purple-light: 262 83% 95%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 174 72% 40%;
+
+    --radius: 0.75rem;
+
+    --gradient-hero: linear-gradient(135deg, hsl(174 72% 40%) 0%, hsl(199 89% 48%) 50%, hsl(262 83% 58%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(16 85% 57%) 0%, hsl(38 92% 50%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(152 69% 41%) 0%, hsl(174 72% 56%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
+
+    --shadow-soft: 0 4px 20px -2px hsl(174 72% 40% / 0.15);
+    --shadow-card: 0 8px 32px -8px hsl(222 47% 11% / 0.1);
+    --shadow-glow: 0 0 40px hsl(174 72% 56% / 0.3);
+    --shadow-hover: 0 12px 40px -8px hsl(174 72% 40% / 0.25);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 174 72% 50%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 16 85% 57%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 152 69% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --error: 0 72% 55%;
+    --error-foreground: 0 0% 100%;
+
+    --info: 217 91% 65%;
+    --info-foreground: 0 0% 100%;
+
+    --purple: 262 83% 65%;
+    --purple-foreground: 0 0% 100%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 174 72% 50%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    font-family: 'Outfit', sans-serif !important;
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif !important;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 600;
+  }
+
+  button {
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 500;
+  }
+
+  input, textarea, select {
+    font-family: 'Outfit', sans-serif !important;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background-color: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(24px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .glass-strong {
+    background-color: hsl(var(--card) / 0.95);
+    backdrop-filter: blur(40px);
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-hero);
+  }
+
+  .gradient-border {
+    position: relative;
+    background: hsl(var(--card));
+    border-radius: var(--radius);
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: var(--gradient-hero);
+    border-radius: calc(var(--radius) + 2px);
+    z-index: -1;
+    opacity: 0.5;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card-hover:hover {
+    @apply -translate-y-1;
+    box-shadow: var(--shadow-hover);
+  }
+
+  .stat-ring {
+    @apply relative inline-flex items-center justify-center;
+  }
+
+  .stat-ring::before {
+    content: '';
+    @apply absolute inset-0 rounded-full;
+    background: conic-gradient(
+      hsl(var(--primary)) calc(var(--progress, 0) * 1%),
+      hsl(var(--border)) calc(var(--progress, 0) * 1%)
+    );
+    mask: radial-gradient(farthest-side, transparent calc(100% - 6px), black calc(100% - 6px));
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), black calc(100% - 6px));
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(var(--primary) / 0.5);
+    }
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--card)) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .count-up {
+    animation: countUp 1s ease-out forwards;
+  }
+
+  @keyframes countUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 /* Custom scrollbar */
@@ -181,4 +508,281 @@ code {
 
 .keypad-clear {
   @apply bg-red-50 hover:bg-red-100 border-red-400 text-red-700 w-full;
+}
+
+/* Additional utility classes for the exact color scheme */
+.bg-background { background-color: hsl(var(--background)); }
+.text-foreground { color: hsl(var(--foreground)); }
+.bg-card { background-color: hsl(var(--card)); }
+.text-card-foreground { color: hsl(var(--card-foreground)); }
+.bg-primary { background-color: hsl(var(--primary)); }
+.text-primary { color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+.bg-secondary { background-color: hsl(var(--secondary)); }
+.text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
+.bg-accent { background-color: hsl(var(--accent)); }
+.text-accent-foreground { color: hsl(var(--accent-foreground)); }
+.border-border { border-color: hsl(var(--border)); }
+.text-success { color: hsl(var(--success)); }
+.bg-success { background-color: hsl(var(--success)); }
+.text-error { color: hsl(var(--error)); }
+.bg-error { background-color: hsl(var(--error)); }
+.text-warning { color: hsl(var(--warning)); }
+.bg-warning { background-color: hsl(var(--warning)); }
+.text-info { color: hsl(var(--info)); }
+.bg-info { background-color: hsl(var(--info)); }
+.text-purple { color: hsl(var(--purple)); }
+.bg-purple { background-color: hsl(var(--purple)); }
+
+/* Light backgrounds */
+.bg-success-light { background-color: hsl(var(--success-light)); }
+.bg-error-light { background-color: hsl(var(--error-light)); }
+.bg-warning-light { background-color: hsl(var(--warning-light)); }
+.bg-info-light { background-color: hsl(var(--info-light)); }
+.bg-purple-light { background-color: hsl(var(--purple-light)); }
+
+/* Border colors */
+.border-success { border-color: hsl(var(--success)); }
+.border-error { border-color: hsl(var(--error)); }
+.border-warning { border-color: hsl(var(--warning)); }
+.border-info { border-color: hsl(var(--info)); }
+.border-purple { border-color: hsl(var(--purple)); }
+
+/* Shadow effects using CSS variables */
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+.shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+/* Foreground colors for buttons */
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+.text-error-foreground { color: hsl(var(--error-foreground)); }
+.text-warning-foreground { color: hsl(var(--warning-foreground)); }
+.text-success-foreground { color: hsl(var(--success-foreground)); }
+.text-info-foreground { color: hsl(var(--info-foreground)); }
+.text-purple-foreground { color: hsl(var(--purple-foreground)); }
+
+/* Border colors with opacity */
+.border-success\/30 { border-color: hsl(var(--success) / 0.3); }
+.border-error\/30 { border-color: hsl(var(--error) / 0.3); }
+.border-warning\/30 { border-color: hsl(var(--warning) / 0.3); }
+.border-primary\/20 { border-color: hsl(var(--primary) / 0.2); }
+.border-border\/50 { border-color: hsl(var(--border) / 0.5); }
+
+/* Background colors with opacity */
+.bg-primary\/5 { background-color: hsl(var(--primary) / 0.05); }
+.bg-accent\/5 { background-color: hsl(var(--accent) / 0.05); }
+.bg-info\/3 { background-color: hsl(var(--info) / 0.03); }
+.bg-primary\/10 { background-color: hsl(var(--primary) / 0.1); }
+.bg-info\/10 { background-color: hsl(var(--info) / 0.1); }
+.bg-purple\/10 { background-color: hsl(var(--purple) / 0.1); }
+.bg-card\/50 { background-color: hsl(var(--card) / 0.5); }
+.bg-card\/80 { background-color: hsl(var(--card) / 0.8); }
+.bg-secondary\/50 { background-color: hsl(var(--secondary) / 0.5); }
+.bg-secondary\/80 { background-color: hsl(var(--secondary) / 0.8); }
+.bg-warning\/10 { background-color: hsl(var(--warning) / 0.1); }
+
+/* Primary foreground with opacity */
+.text-primary-foreground\/80 { color: hsl(var(--primary-foreground) / 0.8); }
+.text-foreground\/80 { color: hsl(var(--foreground) / 0.8); }
+/* Smooth animations for question expansion */
+.question-expand {
+  will-change: height, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize animations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improve motion performance */
+[data-framer-motion] {
+  will-change: transform, opacity;
+}
+
+/* Smooth transitions for interactive elements */
+button, .card-hover {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+/* Typography Utility Classes */
+.font-heading {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.font-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Specific component typography */
+.nav-text {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 500;
+}
+
+.card-title {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 600;
+}
+
+.stat-number {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 700;
+  font-feature-settings: 'tnum';
+}
+
+.question-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+}
+
+/* Analysis page specific typography */
+.analysis-title {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.section-heading {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.metric-label {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Test interface typography */
+.test-title {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 700;
+}
+
+.instruction-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.7;
+}
+
+.timer-text {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 600;
+  font-feature-settings: 'tnum';
+}
+
+/* Button typography variations */
+.btn-primary {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.btn-secondary {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 500;
+}
+
+/* Table and data typography */
+.table-header {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table-data {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+/* Form typography */
+.form-title {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 600;
+}
+
+.form-description {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+}
+
+/* Status and badge typography */
+.status-badge {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive typography adjustments */
+@media (max-width: 640px) {
+  h1 {
+    @apply text-2xl;
+  }
+  
+  h2 {
+    @apply text-xl;
+  }
+  
+  h3 {
+    @apply text-lg;
+  }
+}
+/* Force Outfit font application - highest specificity */
+html, body, #root, #root * {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+}
+
+/* Override any conflicting font declarations */
+.text-foreground, .text-muted-foreground, .text-primary, .text-success, .text-error, .text-warning, .text-info {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+/* Specific overrides for common elements */
+button, a, span, p, div, h1, h2, h3, h4, h5, h6, label {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+/* Analysis page specific font enforcement */
+.analysis-page * {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+/* Test if font is loaded */
+.font-test {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 24px !important;
+}
+/* Additional color classes for gradients */
+.from-accent { --tw-gradient-from: hsl(var(--accent)); }
+.to-warning { --tw-gradient-to: hsl(var(--warning)); }
+.text-accent-foreground { color: hsl(var(--accent-foreground)); }
+
+/* Ensure gradient backgrounds work */
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-from), var(--tw-gradient-to));
+}
+
+/* Trophy and icon visibility fixes */
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+/* Ensure all icons are visible */
+svg {
+  display: block;
+  flex-shrink: 0;
 }
