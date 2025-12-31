@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { testAPI, attemptAPI } from '../services/api';
 import { keepAliveService } from '../services/keepAlive';
+import { detectMultipleSubjects } from '../utils/subjectUtils';
 import SmartImageInput from '../components/SmartImageInput';
 import Modal from '../components/Modal';
 
@@ -21,6 +22,7 @@ const ChevronRightIcon = ({ className = "w-5 h-5" }) => (
 const TestCreator = () => {
   const [testName, setTestName] = useState('');
   const [duration, setDuration] = useState({ hours: 3, minutes: 0 });
+  const [enableGraphicalAnalysis, setEnableGraphicalAnalysis] = useState(true);
   const [sections, setSections] = useState([
     {
       name: 'Physics',
@@ -84,6 +86,12 @@ const TestCreator = () => {
       keepAliveService.stop('TestCreator');
     };
   }, [activeTab]); // Add activeTab as dependency
+
+  // Auto-detect multiple subjects for graphical analysis
+  useEffect(() => {
+    const hasMultipleSubjects = detectMultipleSubjects(sections);
+    setEnableGraphicalAnalysis(hasMultipleSubjects);
+  }, [sections]);
 
   const fetchTests = async () => {
     try {
@@ -236,6 +244,7 @@ const TestCreator = () => {
       formData.append('name', testName);
       formData.append('duration', duration.hours * 60 + duration.minutes);
       formData.append('isDraft', 'true'); // Always save as draft
+      formData.append('enableGraphicalAnalysis', enableGraphicalAnalysis.toString());
       
       // Process sections and handle existing URLs vs new files
       const cleanSections = sections.map(section => ({
@@ -420,6 +429,7 @@ const TestCreator = () => {
       formData.append('name', testName);
       formData.append('duration', duration.hours * 60 + duration.minutes);
       formData.append('isDraft', 'false');
+      formData.append('enableGraphicalAnalysis', enableGraphicalAnalysis.toString());
       
       // Process sections and handle existing URLs vs new files
       const cleanSections = sections.map(section => ({
@@ -507,6 +517,7 @@ const TestCreator = () => {
   const resetForm = () => {
     setTestName('');
     setDuration({ hours: 3, minutes: 0 });
+    setEnableGraphicalAnalysis(true);
     setSections([{
       name: 'Physics',
       questionType: 'MCQ',
@@ -530,6 +541,7 @@ const TestCreator = () => {
       hours: Math.floor(test.duration / 60), 
       minutes: test.duration % 60 
     });
+    setEnableGraphicalAnalysis(test.enableGraphicalAnalysis ?? true);
     
     // Convert test sections to form format
     const formSections = test.sections.map(section => ({
@@ -563,6 +575,7 @@ const TestCreator = () => {
       hours: Math.floor(test.duration / 60), 
       minutes: test.duration % 60 
     });
+    setEnableGraphicalAnalysis(test.enableGraphicalAnalysis ?? true);
     
     // Convert test sections to form format
     const formSections = test.sections.map(section => ({
@@ -842,6 +855,32 @@ const TestCreator = () => {
               <p className="text-xs text-gray-500 mt-1">
                 Total Duration: {duration.hours}h {duration.minutes}m ({duration.hours * 60 + duration.minutes} minutes)
               </p>
+            </div>
+
+            {/* Graphical Analysis */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <input
+                  type="checkbox"
+                  id="enableGraphicalAnalysis"
+                  checked={enableGraphicalAnalysis}
+                  onChange={(e) => setEnableGraphicalAnalysis(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <div className="flex-1">
+                  <label htmlFor="enableGraphicalAnalysis" className="text-sm font-semibold text-gray-800 cursor-pointer">
+                    Enable Graphical Analysis
+                  </label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {detectMultipleSubjects(sections) 
+                      ? "Recommended: Multiple subjects detected - charts will help analyze performance" 
+                      : "Single subject detected - graphical analysis may not be necessary"}
+                  </p>
+                </div>
+                <div className="text-2xl">
+                  {enableGraphicalAnalysis ? "📊" : "📋"}
+                </div>
+              </div>
             </div>
 
             {/* Sections */}

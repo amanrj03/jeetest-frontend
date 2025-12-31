@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  LineChart, Line, Legend, PieChart, Pie, Cell, ReferenceArea
+} from 'recharts';
 import { attemptAPI } from '../services/api';
 import { formatTime } from '../hooks/useTimeTracking';
+import { 
+  groupSectionsBySubject, 
+  generateQuestionWiseData 
+} from '../utils/subjectUtils';
 import { 
   Target, 
   CheckCircle2, 
@@ -14,8 +22,9 @@ import {
   ChevronDown,
   Sparkles,
   Trophy,
-  Zap,
-  Clock
+  Clock,
+  BarChart3,
+  TrendingUp as TrendingUpIcon
 } from 'lucide-react';
 
 const AnalysePage = () => {
@@ -130,6 +139,651 @@ const AnalysePage = () => {
     if (marks >= 100) return { percentileRange: "85-95", rankRange: "50,000-1,50,000" };
     if (marks >= 50) return { percentileRange: "60-85", rankRange: "1,50,000-4,00,000" };
     return { percentileRange: "Below 60", rankRange: "4,00,000+" };
+  };
+
+  // Chart data processing
+  const subjectGroups = useMemo(() => {
+    if (attempt?.test?.enableGraphicalAnalysis && attempt?.test?.sections) {
+      return groupSectionsBySubject(attempt.test.sections, attempt.answers);
+    }
+    return null;
+  }, [attempt]);
+
+  const processedChartData = useMemo(() => {
+    if (!subjectGroups) return null;
+    return Object.values(subjectGroups).map(subject => ({
+      subject: subject.name,
+      correct: subject.stats.correct,
+      wrong: subject.stats.wrong,
+      unattempted: subject.stats.unattempted,
+      accuracy: parseFloat(subject.stats.accuracy.toFixed(1)),
+      marks: subject.stats.marks,
+      maxMarks: subject.stats.maxMarks,
+      timeMinutes: Math.round(subject.stats.totalTime / 60)
+    }));
+  }, [subjectGroups]);
+
+  // Enhanced chart data for time distribution with remaining time
+  const timeDistributionData = useMemo(() => {
+    if (!processedChartData || !attempt?.test?.duration) return null;
+    
+    const totalTestTime = attempt.test.duration; // in minutes
+    const totalUsedTime = processedChartData.reduce((sum, subject) => sum + subject.timeMinutes, 0);
+    const remainingTime = Math.max(0, totalTestTime - totalUsedTime);
+    
+    // Create data array with subjects + remaining time
+    const data = [...processedChartData];
+    
+    if (remainingTime > 0) {
+      data.push({
+        subject: 'Remaining Time',
+        timeMinutes: remainingTime,
+        isRemainingTime: true
+      });
+    }
+    
+    return data;
+  }, [processedChartData, attempt]);
+
+  const lineChartData = useMemo(() => {
+    if (!attempt?.test?.sections) return null;
+    
+    const questionData = generateQuestionWiseData(attempt.test.sections, attempt.answers);
+    
+    // Process data for new line charts
+    let cumulativeMarks = 0;
+    let cumulativeCorrect = 0;
+    let cumulativeTotal = 0;
+    
+    const processedData = questionData.map((q, index) => {
+      cumulativeMarks += q.marks;
+      cumulativeTotal++;
+      if (q.isCorrect === true) cumulativeCorrect++;
+      
+      const accuracy = cumulativeTotal > 0 ? (cumulativeCorrect / cumulativeTotal) * 100 : 0;
+      
+      return {
+        questionNumber: q.questionNumber,
+        subject: q.subject,
+        marks: q.marks,
+        cumulativeMarks,
+        accuracy: parseFloat(accuracy.toFixed(1)),
+        timeSpent: q.timeSpent,
+        isCorrect: q.isCorrect
+      };
+    });
+    
+    return processedData;
+  }, [attempt]);
+
+  // Chart colors and components
+  const CHART_COLORS = {
+    Physics: '#3B82F6',
+    Chemistry: '#10B981', 
+    Mathematics: '#8B5CF6',
+    correct: '#10B981',
+    wrong: '#EF4444',
+    unattempted: '#F59E0B',
+    maxMarks: '#D1D5DB' // Light gray for max marks - visible but dull
+  };
+
+  // Pie chart colors for better variety
+  const PIE_COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4'];
+  const REMAINING_TIME_COLOR = '#9CA3AF'; // Gray color for remaining time
+
+  // Custom tooltip component for regular charts
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="glass rounded-xl p-4 border border-border/50 shadow-lg">
+          <p className="text-foreground font-medium">{`${label}`}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {`${entry.dataKey}: ${entry.value}`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tooltip for pie charts - cleaner display
+  const PieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="glass rounded-xl p-4 border border-border/50 shadow-lg">
+          <p className="text-foreground font-medium">{data.subject}</p>
+          <p className="text-sm" style={{ color: payload[0].color }}>
+            {payload[0].dataKey === 'accuracy' ? `Accuracy: ${data.accuracy}%` : `Time: ${data.timeMinutes} min`}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Helper function to create background areas for subjects
+  const createSubjectAreas = (data) => {
+    if (!data || data.length === 0) return [];
+    
+    const areas = [];
+    let currentSubject = null;
+    let startQuestion = null;
+    
+    data.forEach((point, index) => {
+      if (currentSubject !== point.subject) {
+        if (currentSubject && startQuestion !== null) {
+          areas.push({
+            subject: currentSubject,
+            x1: startQuestion,
+            x2: index > 0 ? data[index - 1].questionNumber : startQuestion,
+            color: CHART_COLORS[currentSubject]
+          });
+        }
+        currentSubject = point.subject;
+        startQuestion = point.questionNumber;
+      }
+    });
+    
+    // Add the last area
+    if (currentSubject && startQuestion !== null) {
+      areas.push({
+        subject: currentSubject,
+        x1: startQuestion,
+        x2: data[data.length - 1].questionNumber,
+        color: CHART_COLORS[currentSubject]
+      });
+    }
+    
+    return areas;
+  };
+
+  // Chart components
+  const SubjectPerformanceChart = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className="glass rounded-2xl p-6 card-hover"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <BarChart3 className="w-5 h-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Subject Performance</h3>
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={processedChartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <XAxis dataKey="subject" stroke="hsl(var(--muted-foreground))" />
+          <YAxis 
+            stroke="hsl(var(--muted-foreground))" 
+            domain={[0, (dataMax) => Math.ceil(dataMax / 5) * 5]}
+            ticks={[0, 5, 10, 15, 20, 25]}
+            interval={0}
+            allowDecimals={false}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Bar dataKey="correct" fill={CHART_COLORS.correct} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="wrong" fill={CHART_COLORS.wrong} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="unattempted" fill={CHART_COLORS.unattempted} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </motion.div>
+  );
+
+  const SubjectAccuracyChart = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="glass rounded-2xl p-6 card-hover"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Target className="w-5 h-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Subject Accuracy</h3>
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={processedChartData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={({ subject, accuracy }) => `${subject}: ${accuracy}%`}
+            outerRadius={80}
+            fill="#8884d8"
+            dataKey="accuracy"
+          >
+            {processedChartData?.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<PieTooltip />} />
+          <Legend 
+            formatter={(value, entry) => entry.payload.subject}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </motion.div>
+  );
+
+  const MarksDistributionChart = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="glass rounded-2xl p-6 card-hover"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Award className="w-5 h-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Marks Distribution</h3>
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={processedChartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <XAxis dataKey="subject" stroke="hsl(var(--muted-foreground))" />
+          <YAxis stroke="hsl(var(--muted-foreground))" />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Bar dataKey="marks" fill="#10B981" radius={[4, 4, 0, 0]} name="Obtained Marks" />
+          <Bar dataKey="maxMarks" fill={CHART_COLORS.maxMarks} radius={[4, 4, 0, 0]} name="Maximum Marks" />
+        </BarChart>
+      </ResponsiveContainer>
+    </motion.div>
+  );
+
+  const TimeSpentChart = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="glass rounded-2xl p-6 card-hover"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Clock className="w-5 h-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Time Spent Distribution</h3>
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={timeDistributionData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={({ subject, timeMinutes }) => `${subject}: ${timeMinutes}min`}
+            outerRadius={80}
+            fill="#8884d8"
+            dataKey="timeMinutes"
+          >
+            {timeDistributionData?.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.isRemainingTime ? REMAINING_TIME_COLOR : PIE_COLORS[index % PIE_COLORS.length]} 
+              />
+            ))}
+          </Pie>
+          <Tooltip content={<PieTooltip />} />
+          <Legend 
+            formatter={(value, entry) => entry.payload.subject}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </motion.div>
+  );
+
+  // New Chart 1: Score vs Question Number
+  const ScoreVsQuestionChart = () => {
+    const subjectAreas = createSubjectAreas(lineChartData);
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="glass rounded-2xl p-6 card-hover"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUpIcon className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">Score vs Question Number</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={lineChartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+            
+            {/* Background areas for each subject */}
+            {subjectAreas.map((area, index) => (
+              <ReferenceArea
+                key={`area-${index}`}
+                x1={area.x1}
+                x2={area.x2}
+                fill={area.color}
+                fillOpacity={0.1}
+                stroke="none"
+              />
+            ))}
+            
+            <XAxis 
+              dataKey="questionNumber" 
+              stroke="hsl(var(--muted-foreground))" 
+              domain={[1, 'dataMax']}
+            />
+            <YAxis 
+              stroke="hsl(var(--muted-foreground))" 
+              domain={[0, attempt?.test?.totalMarks || 300]}
+            />
+            <Tooltip 
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="glass rounded-xl p-4 border border-border/50 shadow-lg">
+                      <p className="text-foreground font-medium">Question {label}</p>
+                      <p className="text-sm" style={{ color: CHART_COLORS[data.subject] }}>
+                        Subject: {data.subject}
+                      </p>
+                      <p className="text-sm">Cumulative Score: {data.cumulativeMarks}</p>
+                      <p className="text-sm">This Question: {data.marks > 0 ? '+' : ''}{data.marks}</p>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="cumulativeMarks" 
+              stroke="#06B6D4"
+              strokeWidth={3}
+              dot={(props) => {
+                const { payload, cx, cy } = props;
+                const subjectColor = CHART_COLORS[payload?.subject] || '#3B82F6';
+                const isCorrect = payload?.isCorrect;
+                
+                if (isCorrect === true) {
+                  // Correct answer - full subject color
+                  return <circle cx={cx} cy={cy} fill={subjectColor} stroke={subjectColor} strokeWidth={2} r={4} />;
+                } else if (isCorrect === false) {
+                  // Wrong answer - full red
+                  return <circle cx={cx} cy={cy} fill="#EF4444" stroke="#EF4444" strokeWidth={2} r={4} />;
+                } else {
+                  // Unattempted - gray color
+                  return <circle cx={cx} cy={cy} fill="#9CA3AF" stroke="#9CA3AF" strokeWidth={2} r={4} />;
+                }
+              }}
+              activeDot={(props) => {
+                const { payload, cx, cy } = props;
+                const subjectColor = CHART_COLORS[payload?.subject] || '#3B82F6';
+                const isCorrect = payload?.isCorrect;
+                
+                if (isCorrect === true) {
+                  return <circle cx={cx} cy={cy} fill={subjectColor} stroke={subjectColor} strokeWidth={2} r={6} />;
+                } else if (isCorrect === false) {
+                  // Wrong answer - full red (larger)
+                  return <circle cx={cx} cy={cy} fill="#EF4444" stroke="#EF4444" strokeWidth={2} r={6} />;
+                } else {
+                  return <circle cx={cx} cy={cy} fill="#9CA3AF" stroke="#9CA3AF" strokeWidth={2} r={6} />;
+                }
+              }}
+              connectNulls={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+        
+        {/* Color Legend */}
+        <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-border/20">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Physics }}></div>
+            <span className="text-sm text-muted-foreground">Physics</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Chemistry }}></div>
+            <span className="text-sm text-muted-foreground">Chemistry</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Mathematics }}></div>
+            <span className="text-sm text-muted-foreground">Mathematics</span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // New Chart 2: Accuracy Progression During Test
+  const AccuracyProgressionChart = () => {
+    const subjectAreas = createSubjectAreas(lineChartData);
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="glass rounded-2xl p-6 card-hover"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">Accuracy Progression During Test</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={lineChartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+            
+            {/* Background areas for each subject */}
+            {subjectAreas.map((area, index) => (
+              <ReferenceArea
+                key={`area-${index}`}
+                x1={area.x1}
+                x2={area.x2}
+                fill={area.color}
+                fillOpacity={0.1}
+                stroke="none"
+              />
+            ))}
+            
+            <XAxis 
+              dataKey="questionNumber" 
+              stroke="hsl(var(--muted-foreground))" 
+              domain={[1, 'dataMax']}
+            />
+            <YAxis 
+              stroke="hsl(var(--muted-foreground))" 
+              domain={[0, 100]}
+              tickFormatter={(value) => `${value}%`}
+            />
+            <Tooltip 
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="glass rounded-xl p-4 border border-border/50 shadow-lg">
+                      <p className="text-foreground font-medium">After Question {label}</p>
+                      <p className="text-sm" style={{ color: CHART_COLORS[data.subject] }}>
+                        Subject: {data.subject}
+                      </p>
+                      <p className="text-sm">Overall Accuracy: {data.accuracy}%</p>
+                      <p className="text-sm">This Question: {data.isCorrect === true ? 'Correct ✅' : data.isCorrect === false ? 'Wrong ❌' : 'Unattempted ⏸️'}</p>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="accuracy" 
+              stroke="#06B6D4"
+              strokeWidth={3}
+              dot={(props) => {
+                const { payload, cx, cy } = props;
+                const subjectColor = CHART_COLORS[payload?.subject] || '#10B981';
+                const isCorrect = payload?.isCorrect;
+                
+                if (isCorrect === true) {
+                  // Correct answer - full subject color
+                  return <circle cx={cx} cy={cy} fill={subjectColor} stroke={subjectColor} strokeWidth={2} r={4} />;
+                } else if (isCorrect === false) {
+                  // Wrong answer - full red
+                  return <circle cx={cx} cy={cy} fill="#EF4444" stroke="#EF4444" strokeWidth={2} r={4} />;
+                } else {
+                  // Unattempted - gray color
+                  return <circle cx={cx} cy={cy} fill="#9CA3AF" stroke="#9CA3AF" strokeWidth={2} r={4} />;
+                }
+              }}
+              activeDot={(props) => {
+                const { payload, cx, cy } = props;
+                const subjectColor = CHART_COLORS[payload?.subject] || '#10B981';
+                const isCorrect = payload?.isCorrect;
+                
+                if (isCorrect === true) {
+                  return <circle cx={cx} cy={cy} fill={subjectColor} stroke={subjectColor} strokeWidth={2} r={6} />;
+                } else if (isCorrect === false) {
+                  // Wrong answer - full red (larger)
+                  return <circle cx={cx} cy={cy} fill="#EF4444" stroke="#EF4444" strokeWidth={2} r={6} />;
+                } else {
+                  return <circle cx={cx} cy={cy} fill="#9CA3AF" stroke="#9CA3AF" strokeWidth={2} r={6} />;
+                }
+              }}
+              connectNulls={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+        
+        {/* Color Legend */}
+        <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-border/20">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Physics }}></div>
+            <span className="text-sm text-muted-foreground">Physics</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Chemistry }}></div>
+            <span className="text-sm text-muted-foreground">Chemistry</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Mathematics }}></div>
+            <span className="text-sm text-muted-foreground">Mathematics</span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // New Chart 3: Time Spent per Question
+  const TimePerQuestionChart = () => {
+    const subjectAreas = createSubjectAreas(lineChartData);
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        className="glass rounded-2xl p-6 card-hover"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">Time Spent per Question</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={lineChartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+            
+            {/* Background areas for each subject */}
+            {subjectAreas.map((area, index) => (
+              <ReferenceArea
+                key={`area-${index}`}
+                x1={area.x1}
+                x2={area.x2}
+                fill={area.color}
+                fillOpacity={0.1}
+                stroke="none"
+              />
+            ))}
+            
+            <XAxis 
+              dataKey="questionNumber" 
+              stroke="hsl(var(--muted-foreground))" 
+              domain={[1, 'dataMax']}
+            />
+            <YAxis 
+              stroke="hsl(var(--muted-foreground))" 
+              domain={[0, 'dataMax + 30']}
+              tickFormatter={(value) => `${value}s`}
+            />
+            <Tooltip 
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="glass rounded-xl p-4 border border-border/50 shadow-lg">
+                      <p className="text-foreground font-medium">Question {label}</p>
+                      <p className="text-sm" style={{ color: CHART_COLORS[data.subject] }}>
+                        Subject: {data.subject}
+                      </p>
+                      <p className="text-sm">Time Spent: {data.timeSpent} seconds</p>
+                      <p className="text-sm">Result: {data.isCorrect === true ? 'Correct ✅' : data.isCorrect === false ? 'Wrong ❌' : 'Unattempted ⏸️'}</p>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="timeSpent" 
+              stroke="#06B6D4"
+              strokeWidth={3}
+              dot={(props) => {
+                const { payload, cx, cy } = props;
+                const subjectColor = CHART_COLORS[payload?.subject] || '#8B5CF6';
+                const isCorrect = payload?.isCorrect;
+                
+                if (isCorrect === true) {
+                  // Correct answer - full subject color
+                  return <circle cx={cx} cy={cy} fill={subjectColor} stroke={subjectColor} strokeWidth={2} r={4} />;
+                } else if (isCorrect === false) {
+                  // Wrong answer - full red
+                  return <circle cx={cx} cy={cy} fill="#EF4444" stroke="#EF4444" strokeWidth={2} r={4} />;
+                } else {
+                  // Unattempted - gray color
+                  return <circle cx={cx} cy={cy} fill="#9CA3AF" stroke="#9CA3AF" strokeWidth={2} r={4} />;
+                }
+              }}
+              activeDot={(props) => {
+                const { payload, cx, cy } = props;
+                const subjectColor = CHART_COLORS[payload?.subject] || '#8B5CF6';
+                const isCorrect = payload?.isCorrect;
+                
+                if (isCorrect === true) {
+                  return <circle cx={cx} cy={cy} fill={subjectColor} stroke={subjectColor} strokeWidth={2} r={6} />;
+                } else if (isCorrect === false) {
+                  // Wrong answer - full red (larger)
+                  return <circle cx={cx} cy={cy} fill="#EF4444" stroke="#EF4444" strokeWidth={2} r={6} />;
+                } else {
+                  return <circle cx={cx} cy={cy} fill="#9CA3AF" stroke="#9CA3AF" strokeWidth={2} r={6} />;
+                }
+              }}
+              connectNulls={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+        
+        {/* Color Legend */}
+        <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-border/20">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Physics }}></div>
+            <span className="text-sm text-muted-foreground">Physics</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Chemistry }}></div>
+            <span className="text-sm text-muted-foreground">Chemistry</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CHART_COLORS.Mathematics }}></div>
+            <span className="text-sm text-muted-foreground">Mathematics</span>
+          </div>
+        </div>
+      </motion.div>
+    );
   };
 
   if (loading) {
@@ -337,7 +991,7 @@ const AnalysePage = () => {
                 whileHover={{ scale: 1.02 }}
                 className="bg-card/80 rounded-xl p-6 text-center shadow-soft"
               >
-                <Zap className="w-8 h-8 text-primary mx-auto mb-3" />
+                <Trophy className="w-8 h-8 text-primary mx-auto mb-3" />
                 <div className="text-3xl sm:text-4xl font-bold text-primary mb-1">
                   {overallStats?.totalMarks}
                 </div>
@@ -380,6 +1034,62 @@ const AnalysePage = () => {
             </motion.div>
           </div>
         </motion.section>
+
+        {/* Graphical Analysis - Modern Animated Section */}
+        {attempt?.test?.enableGraphicalAnalysis && subjectGroups && Object.keys(subjectGroups).length > 1 && (
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
+                <BarChart3 className="w-6 h-6 text-primary" />
+              </motion.div>
+              <h2 className="text-xl font-semibold text-foreground">Graphical Analysis</h2>
+            </div>
+            
+            {/* Performance Overview */}
+            <div className="mb-8">
+              <motion.h3 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                className="text-lg font-medium text-foreground mb-4 flex items-center gap-2"
+              >
+                <Sparkles className="w-5 h-5 text-primary" />
+                Performance Overview
+              </motion.h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <SubjectPerformanceChart />
+                <SubjectAccuracyChart />
+                <MarksDistributionChart />
+                <TimeSpentChart />
+              </div>
+            </div>
+            
+            {/* New Line Charts */}
+            <div className="mb-8">
+              <motion.h3 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.8 }}
+                className="text-lg font-medium text-foreground mb-4 flex items-center gap-2"
+              >
+                <TrendingUpIcon className="w-5 h-5 text-primary" />
+                Detailed Analysis
+              </motion.h3>
+              <div className="grid grid-cols-1 gap-6">
+                <ScoreVsQuestionChart />
+                <AccuracyProgressionChart />
+                <TimePerQuestionChart />
+              </div>
+            </div>
+          </motion.section>
+        )}
 
         {/* Section Analysis */}
         <motion.section
