@@ -11,6 +11,7 @@ import {
   groupSectionsBySubject, 
   generateQuestionWiseData 
 } from '../utils/subjectUtils';
+import { getJeeMainsStats } from '../data/jeeMainsStats';
 import { 
   Target, 
   CheckCircle2, 
@@ -131,16 +132,6 @@ const AnalysePage = () => {
     return stats;
   };
 
-  const getJeeMainsStats = (marks) => {
-    if (marks >= 280) return { percentileRange: "99.9+", rankRange: "1-100" };
-    if (marks >= 250) return { percentileRange: "99.5-99.9", rankRange: "100-1,000" };
-    if (marks >= 200) return { percentileRange: "98-99.5", rankRange: "1,000-20,000" };
-    if (marks >= 150) return { percentileRange: "95-98", rankRange: "20,000-50,000" };
-    if (marks >= 100) return { percentileRange: "85-95", rankRange: "50,000-1,50,000" };
-    if (marks >= 50) return { percentileRange: "60-85", rankRange: "1,50,000-4,00,000" };
-    return { percentileRange: "Below 60", rankRange: "4,00,000+" };
-  };
-
   // Chart data processing
   const subjectGroups = useMemo(() => {
     if (attempt?.test?.enableGraphicalAnalysis && attempt?.test?.sections) {
@@ -193,14 +184,19 @@ const AnalysePage = () => {
     // Process data for new line charts
     let cumulativeMarks = 0;
     let cumulativeCorrect = 0;
-    let cumulativeTotal = 0;
+    let cumulativeAttempted = 0;
     
     const processedData = questionData.map((q, index) => {
       cumulativeMarks += q.marks;
-      cumulativeTotal++;
-      if (q.isCorrect === true) cumulativeCorrect++;
       
-      const accuracy = cumulativeTotal > 0 ? (cumulativeCorrect / cumulativeTotal) * 100 : 0;
+      // Only count attempted questions for accuracy calculation
+      if (q.isCorrect !== null) {
+        cumulativeAttempted++;
+        if (q.isCorrect === true) cumulativeCorrect++;
+      }
+      
+      // Calculate accuracy based only on attempted questions
+      const accuracy = cumulativeAttempted > 0 ? (cumulativeCorrect / cumulativeAttempted) * 100 : 0;
       
       return {
         questionNumber: q.questionNumber,
@@ -345,26 +341,23 @@ const AnalysePage = () => {
         <h3 className="text-lg font-semibold text-foreground">Subject Accuracy</h3>
       </div>
       <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={processedChartData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ subject, accuracy }) => `${subject}: ${accuracy}%`}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="accuracy"
-          >
-            {processedChartData?.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip content={<PieTooltip />} />
-          <Legend 
-            formatter={(value, entry) => entry.payload.subject}
+        <BarChart data={processedChartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <XAxis dataKey="subject" stroke="hsl(var(--muted-foreground))" />
+          <YAxis 
+            stroke="hsl(var(--muted-foreground))" 
+            domain={[0, 100]}
+            tickFormatter={(value) => `${value}%`}
           />
-        </PieChart>
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <Bar 
+            dataKey="accuracy" 
+            fill="#06B6D4" 
+            radius={[4, 4, 0, 0]} 
+            name="Accuracy %" 
+          />
+        </BarChart>
       </ResponsiveContainer>
     </motion.div>
   );
