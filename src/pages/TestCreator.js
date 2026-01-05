@@ -4,6 +4,7 @@ import { keepAliveService } from '../services/keepAlive';
 import { detectMultipleSubjects } from '../utils/subjectUtils';
 import SmartImageInput from '../components/SmartImageInput';
 import Modal from '../components/Modal';
+import BulkSelectionErrorModal from '../components/BulkSelectionErrorModal';
 
 // Chevron Down Icon Component
 const ChevronDownIcon = ({ className = "w-5 h-5" }) => (
@@ -41,6 +42,7 @@ const TestCreator = () => {
   const [editMode, setEditMode] = useState('create'); // 'create', 'edit', 'continue'
   const [modal, setModal] = useState({ show: false, title: '', message: '', type: 'info' });
   const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null });
+  const [bulkErrorModal, setBulkErrorModal] = useState({ show: false, error: null });
   const [activeTab, setActiveTab] = useState('create');
   
   // Track if component is mounted to prevent API calls after unmount
@@ -224,6 +226,107 @@ const TestCreator = () => {
     const updatedSections = [...sections];
     updatedSections[sectionIndex].questions[questionIndex][field] = file;
     setSections(updatedSections);
+  };
+
+  // Bulk selection validation functions
+  const validateBulkSelection = (files, expectedCount) => {
+    const errors = [];
+    
+    // Check file count
+    if (files.length !== expectedCount) {
+      errors.push({
+        type: 'wrongCount',
+        expectedCount,
+        actualCount: files.length
+      });
+    }
+    
+    // Check file types
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
+    
+    if (invalidFiles.length > 0) {
+      errors.push({
+        type: 'invalidFileType',
+        invalidFiles: invalidFiles.map(f => f.name)
+      });
+    }
+    
+    // Return combined error or null
+    if (errors.length === 0) return null;
+    
+    if (errors.length === 1) {
+      return errors[0];
+    }
+    
+    // Mixed errors
+    return {
+      type: 'mixedErrors',
+      expectedCount,
+      actualCount: files.length,
+      invalidFiles: invalidFiles.map(f => f.name)
+    };
+  };
+
+  // Bulk selection handlers
+  const handleBulkQuestionSelection = (sectionIndex) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/*';
+    
+    input.onchange = (e) => {
+      const files = Array.from(e.target.files);
+      const expectedCount = sections[sectionIndex].questions.length;
+      
+      const validationError = validateBulkSelection(files, expectedCount);
+      
+      if (validationError) {
+        setBulkErrorModal({ show: true, error: validationError });
+        return;
+      }
+      
+      // Validation passed - assign files to questions
+      const updatedSections = [...sections];
+      files.forEach((file, index) => {
+        if (index < updatedSections[sectionIndex].questions.length) {
+          updatedSections[sectionIndex].questions[index].questionImage = file;
+        }
+      });
+      setSections(updatedSections);
+    };
+    
+    input.click();
+  };
+
+  const handleBulkSolutionSelection = (sectionIndex) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/*';
+    
+    input.onchange = (e) => {
+      const files = Array.from(e.target.files);
+      const expectedCount = sections[sectionIndex].questions.length;
+      
+      const validationError = validateBulkSelection(files, expectedCount);
+      
+      if (validationError) {
+        setBulkErrorModal({ show: true, error: validationError });
+        return;
+      }
+      
+      // Validation passed - assign files to questions
+      const updatedSections = [...sections];
+      files.forEach((file, index) => {
+        if (index < updatedSections[sectionIndex].questions.length) {
+          updatedSections[sectionIndex].questions[index].solutionImage = file;
+        }
+      });
+      setSections(updatedSections);
+    };
+    
+    input.click();
   };
 
   const saveDraft = async () => {
@@ -966,16 +1069,54 @@ const TestCreator = () => {
                     <div className="p-4">
                       <div className="flex justify-between items-center mb-3">
                         <h5 className="text-base font-medium text-gray-800">Questions</h5>
-                        <button
-                          onClick={() => addQuestion(sectionIndex)}
-                          className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-1 text-xs"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                          </svg>
-                          Add Question
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => addQuestion(sectionIndex)}
+                            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-1 text-xs"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add Question
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Bulk Selection Actions */}
+                      {section.questions.length > 0 && (
+                        <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h6 className="text-sm font-semibold text-gray-800 mb-1">Bulk Actions</h6>
+                              <p className="text-xs text-gray-600">
+                                Select multiple images at once for all {section.questions.length} questions in this section
+                              </p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <button
+                                onClick={() => handleBulkQuestionSelection(sectionIndex)}
+                                className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-1 text-xs font-medium"
+                                title={`Select ${section.questions.length} question images at once`}
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                📁 Bulk Questions ({section.questions.length})
+                              </button>
+                              <button
+                                onClick={() => handleBulkSolutionSelection(sectionIndex)}
+                                className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-3 py-2 rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-1 text-xs font-medium"
+                                title={`Select ${section.questions.length} solution images at once`}
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                📁 Bulk Solutions ({section.questions.length})
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {section.questions.length === 0 ? (
                         <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -1450,6 +1591,13 @@ const TestCreator = () => {
         </div>
       </div>
     </Modal>
+
+    {/* Bulk Selection Error Modal */}
+    <BulkSelectionErrorModal
+      isOpen={bulkErrorModal.show}
+      onClose={() => setBulkErrorModal({ show: false, error: null })}
+      error={bulkErrorModal.error}
+    />
     </>
     </>
   );

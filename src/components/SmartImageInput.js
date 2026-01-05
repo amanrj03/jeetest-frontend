@@ -14,7 +14,26 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
     const handleGlobalPaste = (e) => {
       // Only handle paste if this specific component is the active one
       if (window.activeSmartImageInput === componentId) {
-        handlePaste(e);
+        // Handle paste logic inline
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const items = e.clipboardData?.items;
+        
+        if (items) {
+          for (let item of items) {
+            if (item.type.startsWith('image/')) {
+              const file = item.getAsFile();
+              if (file) {
+                handleImageFile(file);
+                // Show success feedback
+                setPasteReady(true);
+                setTimeout(() => setPasteReady(false), 2000);
+                break;
+              }
+            }
+          }
+        }
       }
     };
 
@@ -26,7 +45,26 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
         window.activeSmartImageInput = null;
       }
     };
-  }, [componentId]);
+  }, [componentId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Update preview when currentImage prop changes (for bulk selection)
+  useEffect(() => {
+    if (currentImage) {
+      if (typeof currentImage === 'string') {
+        // It's a URL from existing image
+        setImagePreview(currentImage);
+      } else if (currentImage instanceof File) {
+        // It's a new file from bulk selection
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreview(e.target.result);
+        };
+        reader.readAsDataURL(currentImage);
+      }
+    } else {
+      setImagePreview(null);
+    }
+  }, [currentImage]);
 
   const handleImageFile = (file) => {
     if (file && file.type.startsWith('image/')) {
@@ -52,28 +90,6 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
     const file = e.target.files[0];
     if (file) {
       handleImageFile(file);
-    }
-  };
-
-  const handlePaste = async (e) => {
-    e.preventDefault();
-    e.stopPropagation(); // Prevent event from bubbling to other components
-    
-    const items = e.clipboardData?.items;
-    
-    if (items) {
-      for (let item of items) {
-        if (item.type.startsWith('image/')) {
-          const file = item.getAsFile();
-          if (file) {
-            handleImageFile(file);
-            // Show success feedback
-            setPasteReady(true);
-            setTimeout(() => setPasteReady(false), 2000);
-            break;
-          }
-        }
-      }
     }
   };
 
@@ -142,7 +158,6 @@ const SmartImageInput = ({ label, onImageChange, currentImage, placeholder }) =>
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onPaste={handlePaste}
           tabIndex={0}
           style={{ outline: 'none' }}
           onFocus={() => {
