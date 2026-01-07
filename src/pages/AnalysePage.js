@@ -11,7 +11,7 @@ import {
   groupSectionsBySubject, 
   generateQuestionWiseData 
 } from '../utils/subjectUtils';
-import { getJeeMainsStats } from '../data/jeeMainsStats';
+import { getDetailedJeeMainsStats } from '../data/jeeMainsStats';
 import { 
   Target, 
   CheckCircle2, 
@@ -825,7 +825,7 @@ const AnalysePage = () => {
   const currentSection = attempt.test.sections[selectedSection];
   const filteredQuestions = getFilteredQuestions(currentSection.questions);
   const sectionStats = getSectionStats(currentSection.questions);
-  const jeeStats = getJeeMainsStats(overallStats?.totalMarks || 0);
+  const jeeStats = getDetailedJeeMainsStats(overallStats?.totalMarks || 0);
 
   const statCards = [
     { label: "Total Questions", value: overallStats?.total || 0, icon: BookOpen, color: "primary" },
@@ -997,9 +997,16 @@ const AnalysePage = () => {
               >
                 <TrendingUp className="w-8 h-8 text-success mx-auto mb-3" />
                 <div className="text-2xl sm:text-3xl font-bold text-success mb-1">
-                  {jeeStats.percentileRange}
+                  {jeeStats.estimatedPercentile || jeeStats.percentileRange}
                 </div>
-                <p className="text-sm text-muted-foreground font-medium">Expected Percentile</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  {jeeStats.estimatedPercentile ? 'Estimated Percentile' : 'Expected Percentile'}
+                </p>
+                {jeeStats.estimatedPercentile && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Range: {jeeStats.percentileRange}
+                  </p>
+                )}
               </motion.div>
               
               <motion.div 
@@ -1008,9 +1015,16 @@ const AnalysePage = () => {
               >
                 <Trophy className="w-8 h-8 text-purple mx-auto mb-3" />
                 <div className="text-2xl sm:text-3xl font-bold text-purple mb-1">
-                  {jeeStats.rankRange}
+                  {jeeStats.estimatedRank || jeeStats.rankRange}
                 </div>
-                <p className="text-sm text-muted-foreground font-medium">Expected AIR Range</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  {jeeStats.estimatedRank ? 'Estimated AIR' : 'Expected AIR Range'}
+                </p>
+                {jeeStats.estimatedRank && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Range: {jeeStats.rankRange}
+                  </p>
+                )}
               </motion.div>
             </div>
             
