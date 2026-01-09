@@ -86,7 +86,7 @@ const PreviewTest = () => {
   const currentSectionObj = test?.sections?.[currentSection];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 pb-20"> {/* Add bottom padding for fixed nav */}
       {/* Header */}
       <div className="bg-blue-900 text-white px-6 py-3">
         <div className="flex justify-between items-center">
@@ -228,32 +228,6 @@ const PreviewTest = () => {
                   </div>
                 )}
               </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between items-center">
-                <button
-                  onClick={prevQuestion}
-                  disabled={currentSection === 0 && currentQuestion === 0}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                
-                <div className="text-sm text-gray-600">
-                  Question {currentQuestion + 1} of {currentSectionObj.questions.length} in {currentSectionObj.name}
-                </div>
-                
-                <button
-                  onClick={nextQuestion}
-                  disabled={
-                    currentSection === test.sections.length - 1 && 
-                    currentQuestion === currentSectionObj.questions.length - 1
-                  }
-                  className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -325,6 +299,38 @@ const PreviewTest = () => {
           </div>
         </div>
       </div>
+
+      {/* Fixed Navigation Bar */}
+      {currentQ && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-300 shadow-lg z-50">
+          <div className="flex justify-between items-center px-6 py-4">
+            <button
+              onClick={prevQuestion}
+              disabled={currentSection === 0 && currentQuestion === 0}
+              className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+            >
+              Previous
+            </button>
+            
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800">
+                Question {currentQuestion + 1} of {currentSectionObj.questions.length} in {currentSectionObj.name} ({currentSectionObj.questionType})
+              </div>
+            </div>
+            
+            <button
+              onClick={nextQuestion}
+              disabled={
+                currentSection === test.sections.length - 1 && 
+                currentQuestion === currentSectionObj.questions.length - 1
+              }
+              className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
